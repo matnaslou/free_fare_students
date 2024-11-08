@@ -43,6 +43,7 @@ aop <- read_population(
 # sp <- data.frame(sp)
 # colnames(sp)[colnames(sp) == "X0"] <- "id"
 
+# Sao Paulo ids hexs
 sp <- read_grid(city="spo",showProgress = TRUE)
 colnames(sp)[colnames(sp) == "id_hex"] <- "id"
 
