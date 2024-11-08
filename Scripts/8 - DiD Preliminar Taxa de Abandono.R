@@ -1,5 +1,5 @@
-# DiD em que Toda São Paulo é tratada, mas tiro o resto da RMSP da base
-## Restante da Base é controle
+# DiD em que Escolas Públicas de São Paulo são tratada, mas tiro o resto da RMSP da base
+## Privadas de São Paulo como controle
 library(dplyr)
 library(tidyverse)
 library(modelsummary)
@@ -21,9 +21,6 @@ da <- d %>% filter(!(d$cod_mun%in%c(3503901,3505708,3506607,
                          3548708,3548807,3549953,
                          3552502,3552809,3556453)))
 
-
-# Desconsiderar escolas Particulares e Privadas (OPCIONAL)
-#da <- da %>% filter(!(rede %in% c("Particular", "Privada")))
 
 # Making numeric columns percent
 da[, 10:ncol(da)] <- da[, 10:ncol(da)] / 100
