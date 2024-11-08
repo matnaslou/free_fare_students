@@ -8,6 +8,7 @@ library(r5r)
 library(osmdata)
 library(ggplot2)
 library(h3jsr)
+library(scales)
 
 #setwd("G:/.shortcut-targets-by-id/13s-t-swy07Av0TJBI4pTBk7Dye0Gk70m/free fare students/")
 
@@ -115,24 +116,24 @@ conexao_r5r <- setup_r5(pasta, verbose = FALSE)
 fs::dir_tree(pasta)
 
 # Only execute if necessary: Calculation is very demanding
-matriz <- travel_time_matrix(
-  conexao_r5r,
-  origins = sp,
-  destinations = sp,
-  mode = c("WALK", "TRANSIT"),
-  departure_datetime = as.POSIXct(
-    "13-05-2014 14:00:00",                 # Pre-Treatment travelling
-    format = "%d-%m-%Y %H:%M:%S"
-  ),
-  max_walk_time = 30,
-  max_trip_duration = 120,
-  verbose = FALSE,
-  progress = TRUE
-)
-head(matriz)
-
-# Exporting Travel Time Matrix calculations
-write.csv(matriz, "matriz.csv", row.names = FALSE)
+# matriz <- travel_time_matrix(
+#   conexao_r5r,
+#   origins = sp,
+#   destinations = sp,
+#   mode = c("WALK", "TRANSIT"),
+#   departure_datetime = as.POSIXct(
+#     "13-05-2014 14:00:00",                 # Pre-Treatment travelling
+#     format = "%d-%m-%Y %H:%M:%S"
+#   ),
+#   max_walk_time = 30,
+#   max_trip_duration = 120,
+#   verbose = FALSE,
+#   progress = TRUE
+# )
+# head(matriz)
+# 
+# # Exporting Travel Time Matrix calculations
+# write.csv(matriz, "Dados/Dados Tratados/matriz.csv", row.names = FALSE)
 
 # Reading (if already calculated)
 matriz <- read.csv("matriz.csv", header = TRUE, sep = ",")
@@ -179,7 +180,7 @@ h3_dentro_multipolygon <- h3_dentro_multipolygon %>%
 ggplot() +
   geom_sf(data = h3_dentro_multipolygon, aes(fill = P001), color = NA) +  # Remove as bordas dos hexágonos
   geom_sf(data = rmsp, fill = NA, color = "white") +  # Multipolygon em branco
-  scale_fill_viridis_c(option = "inferno") +
+  scale_fill_viridis_c(option = "inferno", labels = label_number(scale_cut = cut_si("M"))) +  # Define a escala com unidades
   labs(
     fill = "Estimativa",
     title = "Quantas Pessoas Acessam em até 120min este hex?"  # Define o título do gráfico
@@ -196,6 +197,7 @@ ggplot() +
 
 # Removing geom column for exporting
 df_sem_geom <- st_drop_geometry(oportunidades_cumulativas)
-
+df_sem_geom <- df_sem_geom %>%
+  select(id, P001) 
 # Exporting Results
-write.csv(df_sem_geom, "Dados/accessibility.csv", row.names = FALSE)
+write.csv(df_sem_geom, "Dados/Dados Tratados/accessibility.csv", row.names = FALSE)
