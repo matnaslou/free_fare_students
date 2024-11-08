@@ -11,7 +11,7 @@ library(h3jsr)
 
 #setwd("G:/.shortcut-targets-by-id/13s-t-swy07Av0TJBI4pTBk7Dye0Gk70m/free fare students/")
 
-options(java.parameters = "-Xmx6G")
+options(java.parameters = "-Xmx8G")
 
 # Defining the State for analysis
 estado <- "SP"
@@ -25,20 +25,30 @@ aop <- read_population(
 )
 
 # Obtaining Sao Paulo bounding box
-bbox_sp <- getbb("Região Metropolitana de São Paulo, Região Geográfica Intermediária de São Paulo, São Paulo, Região Sudeste, Brasil")
+#bbox_sp <- getbb("Região Metropolitana de São Paulo, Região Geográfica Intermediária de São Paulo, São Paulo, Região Sudeste, Brasil")
+# bbox_sp <- getbb("Cidade de São Paulo, São Paulo")
+
 
 # Criar um polígono com as coordenadas do bounding box
-poligono_sp <- st_as_sfc(st_bbox(c(
-  xmin = bbox_sp["x", "min"],
-  xmax = bbox_sp["x", "max"],
-  ymin = bbox_sp["y", "min"],
-  ymax = bbox_sp["y", "max"]
-), crs = 4326))
+# poligono_sp <- st_as_sfc(st_bbox(c(
+#   xmin = bbox_sp["x", "min"],
+#   xmax = bbox_sp["x", "max"],
+#   ymin = bbox_sp["y", "min"],
+#   ymax = bbox_sp["y", "max"]
+# ), crs = 4326))
 
 # Creating id_hex resolution 9 based on each polygon
-sp <- polygon_to_cells(geometry = poligono_sp, res = 9, simple = TRUE)
-sp <- data.frame(sp)
-colnames(sp)[colnames(sp) == "X0"] <- "id"
+# sp <- polygon_to_cells(geometry = poligono_sp, res = 9, simple = TRUE)
+# sp <- data.frame(sp)
+# colnames(sp)[colnames(sp) == "X0"] <- "id"
+
+sp <- read_grid(city="spo",showProgress = TRUE)
+colnames(sp)[colnames(sp) == "id_hex"] <- "id"
+
+
+# Removing geom column for exporting
+sp <- st_drop_geometry(sp)
+sp <- as.data.frame(sp)
 
 # Creating Latitude and Longitude based on id_hex
 sp <- sp %>% 
