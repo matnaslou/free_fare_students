@@ -23,6 +23,12 @@ rmsp <- c(3503901,3505708,3506607,
                        3552809,3556453)  
 
 # Filtrar dados para São Paulo e calcular a média da taxa de abandono por ano
+d_pais <- d %>%
+  group_by(Ano) %>%
+  summarize(media_taxa_abandono_pais = mean(abandono_tot_em, na.rm = TRUE))
+
+
+# Filtrar dados para São Paulo e calcular a média da taxa de abandono por ano
 df_sp <- d %>%
   filter(cod_mun == codigo_sp) %>%
   group_by(Ano) %>%
@@ -47,13 +53,16 @@ df_restante <- d %>%
   summarize(media_taxa_abandono_restante = mean(abandono_tot_em, na.rm = TRUE))
 
 # Combinar os dados em um único data frame
-df_combined <- df_sp %>%
+df_combined <- d_pais %>%
+  left_join(df_sp, by = "Ano") %>%
   left_join(df_estado_sp, by = "Ano") %>%
   left_join(df_cidades, by = "Ano") %>%
   left_join(df_restante, by = "Ano")
 
 # Criar o gráfico
 ggplot(df_combined, aes(x = Ano)) +
+  geom_line(aes(y = media_taxa_abandono_pais, color = "Nacional"), size = 1) +
+  geom_point(aes(y = media_taxa_abandono_pais, color = "Nacional"), size = 2) +
   geom_line(aes(y = media_taxa_abandono, color = "Cidade de São Paulo"), size = 1) +
   geom_point(aes(y = media_taxa_abandono, color = "Cidade de São Paulo"), size = 2) +
   geom_line(aes(y = media_taxa_abandono_estado_sp, color = "Estado de São Paulo"), linetype = "dashed", size = 1) +
@@ -68,4 +77,5 @@ ggplot(df_combined, aes(x = Ano)) +
        color = "Legendas") +
   theme_minimal()
 
+summary(d$abandono_tot_em)
 summary(d$abandono_tot_em)
