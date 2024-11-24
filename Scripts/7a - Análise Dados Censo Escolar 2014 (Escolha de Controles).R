@@ -55,7 +55,7 @@ censospem <- censosp[censosp$IN_MED == 1,]
 # Escolha da Base (Nacional ou São Paulo)
 base <- "censospem"
 # Escolha do nível de correlação mínima
-corr <- 0.3
+corr <- 0.05
 # Selecionar apenas as variáveis numéricas para a matriz de correlação
 variaveis_numericas <- get(base) %>% select(where(is.numeric))
 
@@ -76,7 +76,7 @@ cor_tipo_escola_df$Variavel <- row.names(cor_tipo_escola_df)
 
 # Filtrar as correlações para valores >= 0.3 ou <= -0.3
 cor_tipo_escola_df_filtrado <- cor_tipo_escola_df %>%
-  filter(get(var2) <= -corr | get(var2) >= corr)
+  filter(get(var2) >= -corr & get(var2) <= corr)
 
 # Cria o gráfico de barras colorido para visualização das correlações
 ggplot(cor_tipo_escola_df_filtrado, aes(x = reorder(Variavel, get(var2)), y = get(var2))) +

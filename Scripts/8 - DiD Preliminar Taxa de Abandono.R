@@ -6,11 +6,81 @@ library(modelsummary)
 library(fixest)
 library(ggplot2)
 library(data.table)
+library(did)
+library(readxl)
 
+# Enem
+enem <- fread("Dados/Dados Enem/DADOS/MICRODADOS_ENEM_ESCOLA.csv")
+
+enem <- enem %>%
+  filter(NU_ANO%in%(2014))
+
+# Renaming Column for merge
+enem <- enem %>%
+  rename(CODESC = CO_ESCOLA_EDUCACENSO)
+
+# Selecionar apenas a coluna 'CODESC' e as demais colunas listadas
+colunas_desejadas <- c("CODESC", "NU_TAXA_PARTICIPACAO", "NU_MEDIA_CN", "NU_MEDIA_CH", 
+                       "NU_MEDIA_LP", "NU_MEDIA_MT", "NU_MEDIA_RED", "PC_FORMACAO_DOCENTE")
+
+# Selecionar as colunas com select() do dplyr
+enem <- enem %>%
+  select(all_of(colunas_desejadas))
+
+# INSE
+# Socio-economic data
+inse <- read_excel("Dados/Dados Censo/Indicador_INSE_por_Escola.xlsx", sheet = "Banco",
+                   skip = 9)
+
+
+# Renaming Column for merge
+inse <- inse %>%
+  rename(CODESC = COD_ESCOLA)
+
+# Renaming Column for merge
+inse <- inse %>%
+  rename(inse = `INSE - CLASSIFICAÇÃO`)
+
+# Num to int variable
+inse <- inse %>%
+  mutate(CODESC = as.integer(CODESC))
+
+# Selecting only relevant information
+inse <- inse[, c(1, (ncol(inse) - 1):ncol(inse))]
+
+# Turning socioeconomic info in factor
+inse$inse <- factor(
+  inse$inse,
+  levels = c("Muito Baixo", "Baixo", "Médio Baixo", "Médio", "Médio Alto",
+             "Alto", "Muito Alto"),
+  labels = c(1, 2, 3, 4, 5, 6, 7)
+)
+
+inse$inse <- as.numeric(inse$inse)
+
+# Scholar Census data
+# Reading Scholar Census Data
+censo <- fread("Dados/Dados Censo/microdados_ed_basica_2014/dados/microdados_ed_basica_2014.csv")
+
+# Renaming Column for merge
+censo <- censo %>%
+  rename(CODESC = CO_ENTIDADE)
+
+# Dropout and Abandonment rates data
 d <- fread("Dados/Dados Tratados/rend_esc.csv")
 
+# Combining data
+da <- d %>%
+  left_join(censo, by = "CODESC")
+
+da <- da %>%
+  left_join(inse, by = "CODESC")
+
+da <- da %>%
+  left_join(enem, by = "CODESC")
+
 # Removing other cities from the Metropolitan Area (could be partially treated)
-da <- d %>% filter(!(d$cod_mun%in%c(3503901,3505708,3506607,
+da <- da %>% filter(!(da$cod_mun%in%c(3503901,3505708,3506607,
                          3509007,3509205,3510609,3513009,
                          3513801,3515004,3515103,3515707,3516309,
                          3516408,3518305,3518800,3522208,
@@ -23,7 +93,20 @@ da <- d %>% filter(!(d$cod_mun%in%c(3503901,3505708,3506607,
 
 
 # Making numeric columns percent
-da[, 10:ncol(da)] <- da[, 10:ncol(da)] / 100
+#da[, 10:ncol(da)] <- da[, 10:ncol(da)] / 100
+# Dividir as colunas desejadas por 100
+da <- da %>%
+  mutate(across(aprov_1o_ano:abandono_tot_em, ~ . / 100))
+
+# Frequência Matrículas
+da <- da %>%
+  mutate(
+    freq_mat_bas_masc = QT_MAT_BAS_MASC / QT_MAT_BAS,
+    freq_mat_bas_branca = QT_MAT_BAS_BRANCA / QT_MAT_BAS,
+    freq_mat_bas_preta = QT_MAT_BAS_PRETA / QT_MAT_BAS,
+    freq_mat_bas_parda = QT_MAT_BAS_PARDA / QT_MAT_BAS,
+    freq_mat_bas_amarela = QT_MAT_BAS_AMARELA / QT_MAT_BAS
+  )
 
 # Dummy de começo do Tratamento: 2015
 # Dummy do grupo tratado
@@ -61,7 +144,7 @@ da2 <- da2 %>%
   mutate(FakeTreat1 = cod_mun == 3550308 & 
            Ano >= 2014,
          FakeTreat2 = cod_mun == 3550308 &
-           Ano == 2011)
+           Ano >= 2011)
 
 # Run the same model we did before but with our fake treatment
 clfe1 <- feols(abandono_tot_em ~ FakeTreat1 | CODESC + Ano,
@@ -150,3 +233,94 @@ clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) |
 
 # And use iplot() for a graph of effects
 iplot(clfe)
+
+
+#####################
+# Doubly Robust DiD #
+#####################
+
+dta_sp <- da %>%
+  filter(cod_mun%in%c(3550308))
+
+# Ordering Data
+dta_sp <- dta_sp %>%
+  arrange(CODESC, Ano)
+
+# Group Variable (in this case, its only the 2015 group)
+dta_sp <- dta_sp %>%
+  mutate(first.treat = ifelse(rede %in% c("Particular", "Privada"), 0, 2015))
+
+# Treat Variable (Value 1 for every treated unit, 0 otherwise)
+dta_sp <- dta_sp %>%
+  mutate(treat = ifelse(rede %in% c("Particular", "Privada"), 0, 1))
+
+# Control Variables
+# Identificar as variáveis a partir de "TP_OCUPACAO_PREDIO_ESCOLAR"
+variaveis <- c(
+  # School Structure
+  "IN_AREA_VERDE","IN_AUDITORIO","IN_BIBLIOTECA","IN_LABORATORIO_CIENCIAS",
+  "IN_LABORATORIO_INFORMATICA","IN_PARQUE_INFANTIL",
+  "IN_QUADRA_ESPORTES",
+  "IN_DEPENDENCIAS_PNE","IN_LAVANDERIA",
+  "IN_ESGOTO_REDE_PUBLICA","IN_BANDA_LARGA")
+# Criar a fórmula dinâmica
+xformla <- as.formula(paste("~", paste(variaveis, collapse = " + ")))
+
+# Data Cleaning: Removing schools that did not exist before treatment
+# Filtrar apenas as linhas onde abandono_tot_em não é vazio (não é NA ou não é uma string vazia)
+dta_sp_filtrada <- dta_sp %>% 
+  filter(!is.na(abandono_tot_em))
+
+
+# Filtrar dados para anos antes de 2015
+antes_2015 <- dta_sp_filtrada %>% filter(Ano < 2015)
+
+# Filtrar dados para anos a partir de 2015
+depois_2015 <- dta_sp_filtrada %>% filter(Ano >= 2015)
+
+# Identificar CODESC que aparecem apenas depois de 2015, mas não antes
+codesc_antes_2015 <- unique(antes_2015$CODESC)
+codesc_depois_2015 <- unique(depois_2015$CODESC)
+
+# CODESC que aparecem apenas depois de 2015
+codesc_exclusivos_depois_2015 <- setdiff(codesc_depois_2015, codesc_antes_2015)
+
+# Mostrar os CODESC que aparecem apenas após 2015
+codesc_exclusivos_depois_2015
+
+# Remover os CODESC que aparecem apenas depois de 2015
+dta_sp_filtrada <- dta_sp_filtrada %>% 
+  filter(!CODESC %in% codesc_exclusivos_depois_2015)
+
+# Contar o número de anos distintos para cada CODESC
+escolas_por_ano <- dta_sp_filtrada %>%
+  group_by(CODESC) %>%
+  summarise(anos_presentes = n_distinct(Ano))
+
+# Identificar as escolas que aparecem em todos os anos de 2007 a 2023
+escolas_com_todos_anos <- escolas_por_ano %>%
+  filter(anos_presentes == 17) %>%  # 17 anos de 2007 a 2023
+  pull(CODESC)
+
+# Filtrar a base original para manter apenas as escolas que aparecem em todos os anos
+dta_sp_filtrada2 <- dta_sp %>% 
+  filter(CODESC %in% escolas_com_todos_anos)
+
+
+# estimate group-time average treatment effects without covariates
+mw.attgt <- att_gt(yname = "abandono_tot_em",
+                   gname = "first.treat",
+                   idname = "CODESC",
+                   tname = "Ano",
+                   xformla = xformla,
+                   data = dta_sp,
+                   base_period = "universal",
+                   allow_unbalanced_panel = TRUE
+)
+
+# summarize the results
+summary(mw.attgt)
+
+# plot the results
+# set ylim so that all plots have the same scale along y-axis
+ggdid(mw.attgt, ylim = c(-.059, .059))
