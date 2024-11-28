@@ -313,7 +313,7 @@ mw.attgt <- att_gt(yname = "abandono_tot_em",
                    idname = "CODESC",
                    tname = "Ano",
                    xformla = xformla,
-                   data = dta_sp,
+                   data = dta_sp_filtrada2,
                    base_period = "universal",
                    allow_unbalanced_panel = TRUE
 )
