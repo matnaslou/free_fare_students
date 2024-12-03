@@ -32,14 +32,13 @@ enem <- enem %>%
 inse <- read_excel("Dados/Dados Censo/Indicador_INSE_por_Escola.xlsx", sheet = "Banco",
                    skip = 9)
 
-
 # Renaming Column for merge
 inse <- inse %>%
   rename(CODESC = COD_ESCOLA)
 
 # Renaming Column for merge
 inse <- inse %>%
-  rename(inse = `INSE - CLASSIFICAÇÃO`)
+  rename(INSE = `INSE - CLASSIFICAÇÃO`)
 
 # Num to int variable
 inse <- inse %>%
@@ -49,14 +48,15 @@ inse <- inse %>%
 inse <- inse[, c(1, (ncol(inse) - 1):ncol(inse))]
 
 # Turning socioeconomic info in factor
-inse$inse <- factor(
-  inse$inse,
+inse$INSE <- factor(
+  inse$INSE,
   levels = c("Muito Baixo", "Baixo", "Médio Baixo", "Médio", "Médio Alto",
              "Alto", "Muito Alto"),
-  labels = c(1, 2, 3, 4, 5, 6, 7)
+  labels = c("Muito Baixo", "Baixo", "Médio Baixo", "Médio", "Médio Alto",
+             "Alto", "Muito Alto")
 )
 
-inse$inse <- as.numeric(inse$inse)
+inse$INSE_num <- as.numeric(inse$INSE)
 
 # Scholar Census data
 # Reading Scholar Census Data
@@ -289,7 +289,7 @@ codesc_exclusivos_depois_2015 <- setdiff(codesc_depois_2015, codesc_antes_2015)
 codesc_exclusivos_depois_2015
 
 # Remover os CODESC que aparecem apenas depois de 2015
-dta_sp_filtrada <- dta_sp_filtrada %>% 
+dta_sp_filtrada2 <- dta_sp_filtrada %>% 
   filter(!CODESC %in% codesc_exclusivos_depois_2015)
 
 # Contar o número de anos distintos para cada CODESC
@@ -303,7 +303,7 @@ escolas_com_todos_anos <- escolas_por_ano %>%
   pull(CODESC)
 
 # Filtrar a base original para manter apenas as escolas que aparecem em todos os anos
-dta_sp_filtrada2 <- dta_sp %>% 
+dta_sp_filtrada3 <- dta_sp %>% 
   filter(CODESC %in% escolas_com_todos_anos)
 
 
@@ -313,7 +313,7 @@ mw.attgt <- att_gt(yname = "abandono_tot_em",
                    idname = "CODESC",
                    tname = "Ano",
                    xformla = xformla,
-                   data = dta_sp_filtrada2,
+                   data = dta_sp_filtrada3,
                    base_period = "universal",
                    allow_unbalanced_panel = TRUE
 )
