@@ -143,120 +143,123 @@ da <- da %>%
                              rede == "Federal"), 1, 0),
          did = time * treated)
 
+##############################################################
+# DiD Simples - Para DRDiD, pode pular esta parte do código! #
+##############################################################
 # Simple DiD
-didreg = lm(abandono_tot_em ~ treated + time + did, data = da)
-summary(didreg)
-
-# Another way of calculating Simple DiD, following The Effect
-da <- da %>%
-  mutate(Treated = cod_mun == 3550308 & (rede == "Estadual" |
-              rede == "Municipal"|
-              rede == "Federal") & 
-           Ano >= 2015)
-
-clfe <- feols(abandono_tot_em ~ Treated | CODESC + Ano,
-              data = da)
-msummary(clfe, stars = c('*' = .1, '**' = .05, '***' = .01))
-
-# Teste Placebo, para ter uma ideia se viola tendências paralelas
-da2 <- da %>%
-  # Use only pre-treatment data
-  filter(Ano <= 2014)
-
-# Create our fake treatment variables
-da2 <- da2 %>%
-  mutate(FakeTreat1 = cod_mun == 3550308 & 
-           Ano >= 2014,
-         FakeTreat2 = cod_mun == 3550308 &
-           Ano >= 2011)
-
-# Run the same model we did before but with our fake treatment
-clfe1 <- feols(abandono_tot_em ~ FakeTreat1 | CODESC + Ano,
-               data = da2)
-clfe2 <- feols(abandono_tot_em ~ FakeTreat2 | CODESC + Ano,
-               data = da2)
-
-msummary(list(clfe1,clfe2), stars = c('*' = .1, '**' = .05, '***' = .01))
-
-# Dynamic DiD
-# Treatment variable
-da <- da %>% mutate(sp = cod_mun == 3550308 & 
-                    (rede == "Estadual" |
-                     rede == "Municipal"|
-                     rede == "Federal"))
-
-clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
-                CODESC + Ano, data = da)
-
-# And use iplot() for a graph of effects
-iplot(clfe)
-
-# Dynamic DiD only with the State of Sao Paulo
-clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
-                CODESC + Ano, data = da[da$UF == "SP", ])
-
-# And use iplot() for a graph of effects
-iplot(clfe)
-
-# Dynamic DiD only with state capitals of Southeast
-clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
-                CODESC + Ano, data = da[da$cod_mun%in%c(3550308,3304557,
-                                                         3205309,3106200), ])
-
-# And use iplot() for a graph of effects
-iplot(clfe)
-
-# Dynamic DiD only with all state capitals
-clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
-                CODESC + Ano, data = da[da$cod_mun%in%c(3550308,3304557,
-                                                         3205309,3106200,
-                                                         1100205,1200401,
-                                                         1302603,1400100,
-                                                         1501402,1600303,
-                                                         1721000,2111300,
-                                                         2211001,2304400,
-                                                         2408102,2507507,
-                                                         2611606,2704302,
-                                                         2800308,2927408,
-                                                         4106902,4205407,
-                                                         4314902,5002704,
-                                                         5103403,5208707,
-                                                         5300108), ])
-
-# And use iplot() for a graph of effects
-iplot(clfe)
-
-# Dynamic DiD only with cities from aopdata (most populated)
-clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
-                CODESC + Ano, data = da[da$cod_mun%in%c(3106200,3509502,
-                                                         4106902,2304400,
-                                                         5208707,4314902,
-                                                         2611606,3304557,
-                                                         3550308,1501402,
-                                                         5300108,5002704,
-                                                         3301702,2704302,
-                                                         1302603,2408102,
-                                                         2927408,3304904,
-                                                         2111300), ])
-
-# And use iplot() for a graph of effects
-iplot(clfe)
-
-# Dynamic DiD only with only Sao Paulo 
-clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
-                CODESC + Ano, data = da[da$cod_mun%in%c(3106200,3509502,
-                                                         4106902,2304400,
-                                                         5208707,4314902,
-                                                         2611606,3304557,
-                                                         3550308,1501402,
-                                                         5300108,5002704,
-                                                         3301702,2704302,
-                                                         1302603,2408102,
-                                                         2927408,3304904,
-                                                         2111300), ])
-
-# And use iplot() for a graph of effects
-iplot(clfe)
+# didreg = lm(abandono_tot_em ~ treated + time + did, data = da)
+# summary(didreg)
+# 
+# # Another way of calculating Simple DiD, following The Effect
+# da <- da %>%
+#   mutate(Treated = cod_mun == 3550308 & (rede == "Estadual" |
+#               rede == "Municipal"|
+#               rede == "Federal") & 
+#            Ano >= 2015)
+# 
+# clfe <- feols(abandono_tot_em ~ Treated | CODESC + Ano,
+#               data = da)
+# msummary(clfe, stars = c('*' = .1, '**' = .05, '***' = .01))
+# 
+# # Teste Placebo, para ter uma ideia se viola tendências paralelas
+# da2 <- da %>%
+#   # Use only pre-treatment data
+#   filter(Ano <= 2014)
+# 
+# # Create our fake treatment variables
+# da2 <- da2 %>%
+#   mutate(FakeTreat1 = cod_mun == 3550308 & 
+#            Ano >= 2014,
+#          FakeTreat2 = cod_mun == 3550308 &
+#            Ano >= 2011)
+# 
+# # Run the same model we did before but with our fake treatment
+# clfe1 <- feols(abandono_tot_em ~ FakeTreat1 | CODESC + Ano,
+#                data = da2)
+# clfe2 <- feols(abandono_tot_em ~ FakeTreat2 | CODESC + Ano,
+#                data = da2)
+# 
+# msummary(list(clfe1,clfe2), stars = c('*' = .1, '**' = .05, '***' = .01))
+# 
+# # Dynamic DiD
+# # Treatment variable
+# da <- da %>% mutate(sp = cod_mun == 3550308 & 
+#                     (rede == "Estadual" |
+#                      rede == "Municipal"|
+#                      rede == "Federal"))
+# 
+# clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
+#                 CODESC + Ano, data = da)
+# 
+# # And use iplot() for a graph of effects
+# iplot(clfe)
+# 
+# # Dynamic DiD only with the State of Sao Paulo
+# clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
+#                 CODESC + Ano, data = da[da$UF == "SP", ])
+# 
+# # And use iplot() for a graph of effects
+# iplot(clfe)
+# 
+# # Dynamic DiD only with state capitals of Southeast
+# clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
+#                 CODESC + Ano, data = da[da$cod_mun%in%c(3550308,3304557,
+#                                                          3205309,3106200), ])
+# 
+# # And use iplot() for a graph of effects
+# iplot(clfe)
+# 
+# # Dynamic DiD only with all state capitals
+# clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
+#                 CODESC + Ano, data = da[da$cod_mun%in%c(3550308,3304557,
+#                                                          3205309,3106200,
+#                                                          1100205,1200401,
+#                                                          1302603,1400100,
+#                                                          1501402,1600303,
+#                                                          1721000,2111300,
+#                                                          2211001,2304400,
+#                                                          2408102,2507507,
+#                                                          2611606,2704302,
+#                                                          2800308,2927408,
+#                                                          4106902,4205407,
+#                                                          4314902,5002704,
+#                                                          5103403,5208707,
+#                                                          5300108), ])
+# 
+# # And use iplot() for a graph of effects
+# iplot(clfe)
+# 
+# # Dynamic DiD only with cities from aopdata (most populated)
+# clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
+#                 CODESC + Ano, data = da[da$cod_mun%in%c(3106200,3509502,
+#                                                          4106902,2304400,
+#                                                          5208707,4314902,
+#                                                          2611606,3304557,
+#                                                          3550308,1501402,
+#                                                          5300108,5002704,
+#                                                          3301702,2704302,
+#                                                          1302603,2408102,
+#                                                          2927408,3304904,
+#                                                          2111300), ])
+# 
+# # And use iplot() for a graph of effects
+# iplot(clfe)
+# 
+# # Dynamic DiD only with only Sao Paulo 
+# clfe <- feols(abandono_tot_em ~ i(Ano, sp, ref = 2014) | 
+#                 CODESC + Ano, data = da[da$cod_mun%in%c(3106200,3509502,
+#                                                          4106902,2304400,
+#                                                          5208707,4314902,
+#                                                          2611606,3304557,
+#                                                          3550308,1501402,
+#                                                          5300108,5002704,
+#                                                          3301702,2704302,
+#                                                          1302603,2408102,
+#                                                          2927408,3304904,
+#                                                          2111300), ])
+# 
+# # And use iplot() for a graph of effects
+# iplot(clfe)
 
 
 #####################
@@ -279,17 +282,16 @@ dta_sp <- dta_sp %>%
   mutate(treat = ifelse(rede %in% c("Particular", "Privada"), 0, 1))
 
 # Control Variables
-# Identificar as variáveis a partir de "TP_OCUPACAO_PREDIO_ESCOLAR"
 variaveis <- c(
   # School Structure
   "IN_AREA_VERDE","IN_AUDITORIO","IN_BIBLIOTECA","IN_LABORATORIO_CIENCIAS",
   "IN_LABORATORIO_INFORMATICA","IN_PARQUE_INFANTIL",
   "IN_QUADRA_ESPORTES","IN_DEPENDENCIAS_PNE","IN_LAVANDERIA",
-  "IN_BANDA_LARGA"
+  "IN_BANDA_LARGA","P001","NU_MEDIA_MT"
   )
 # Criar a fórmula dinâmica
 xformla <- as.formula(paste("~", paste(variaveis, collapse = " + ")))
-xformla <- as.formula(paste("~", paste(selected_variables, collapse = " + ")))
+#xformla <- as.formula(paste("~", paste(selected_variables, collapse = " + ")))
 
 
 # Data Cleaning: Removing schools that did not exist before treatment
@@ -341,14 +343,14 @@ dta_sp_filtrada4$sem_enem <- ifelse(
     dta_sp_filtrada4[, c("NU_TAXA_PARTICIPACAO", "NU_MEDIA_CN", "NU_MEDIA_CH", 
              "NU_MEDIA_LP", "NU_MEDIA_MT", "NU_MEDIA_RED", "PC_FORMACAO_DOCENTE")], 
     1, 
-    function(row) any(is.na(row))
-  ), 1, 0
-)
+    function(row) any(is.na(row))),
+  1, 0)
 
-# Renomeando a coluna
+# Renomeando a coluna do INSE
 dta_sp_filtrada4 <- dta_sp_filtrada4 %>%
   rename(inse_abs = `INSE - VALOR ABSOLUTO`)
 
+# Base de dados apenas com escolas com INSE "Alto"
 dta_sp_filtrada_inse <- dta_sp_filtrada4 %>%
   filter(INSE_num == 6)
 
@@ -357,12 +359,13 @@ mw.attgt <- att_gt(yname = "abandono_tot_em",
                    tname = "Ano",
                    idname = "CODESC",
                    gname = "first.treat",
-                   xformla = ~P001+PC_FORMACAO_DOCENTE+IN_AREA_VERDE,
+                   xformla = ~INSE_num+P001,
                    data = dta_sp_filtrada4,
                    base_period = "universal",
                    control_group = "nevertreated",
-                   allow_unbalanced_panel = TRUE,
-                   panel = TRUE
+                   allow_unbalanced_panel = FALSE,
+                   panel = TRUE,
+                   anticipation = 0
                    )
 #P001+IN_NOTURNO+IN_DESPENSA+IN_FUND_AI+QT_MAT_BAS_PRETA+QT_MAT_BAS_15_17+QT_MAT_BAS_N+QT_DOC_ESP
 # summarize the results
