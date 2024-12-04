@@ -44,7 +44,7 @@ plot_distribuicao <- function(base_dados, coluna_covariada) {
 }
 
 # Exemplo de uso
-plot_distribuicao(dta_sp_filtrada4, "IN_QUADRA_ESPORTES_DESCOBERTA")
+plot_distribuicao(dta_sp_filtrada4, "sem_enem")
 
 # Função para criar o gráfico
 plot_codesc_por_ano <- function(base_dados) {
