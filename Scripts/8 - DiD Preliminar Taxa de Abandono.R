@@ -8,6 +8,8 @@ library(ggplot2)
 library(data.table)
 library(did)
 library(readxl)
+library(geobr)
+library(h3r)
 
 # Enem
 enem <- fread("Dados/Dados Enem/DADOS/MICRODADOS_ENEM_ESCOLA.csv")
@@ -66,6 +68,25 @@ censo <- fread("Dados/Dados Censo/microdados_ed_basica_2014/dados/microdados_ed_
 censo <- censo %>%
   rename(CODESC = CO_ENTIDADE)
 
+# Accessibility Data
+access <- fread("Dados/Dados Tratados/accessibility_2014.csv")
+
+# Schools Data
+escolas1 <- read_schools(year=2020,showProgress = TRUE)
+escolas1 <- escolas1[(escolas1$name_muni %in% "São Paulo"),]
+escolas <- sfheaders::sf_to_df(escolas1)[c("x", "y")]
+escolas$CODESC <- escolas1$code_school
+escolas <- escolas[!(escolas$x %in% NaN),]
+escolas <- escolas[!(escolas$y %in% NaN),]
+escolas$resolution <- 9
+lat = c(escolas$y)
+lng = c(escolas$x)
+resolution = c(escolas$resolution,escolas$resolution)
+escolas <- escolas %>% 
+     mutate(id = latLngToCell(lat, lng, resolution))
+
+sch_access <- escolas %>%
+  left_join(access, by = "id")
 # Dropout and Abandonment rates data
 d <- fread("Dados/Dados Tratados/rend_esc.csv")
 
@@ -78,6 +99,9 @@ da <- da %>%
 
 da <- da %>%
   left_join(enem, by = "CODESC")
+
+da <- da %>%
+  left_join(sch_access, by = "CODESC")
 
 # Removing other cities from the Metropolitan Area (could be partially treated)
 da <- da %>% filter(!(da$cod_mun%in%c(3503901,3505708,3506607,
@@ -260,23 +284,28 @@ variaveis <- c(
   # School Structure
   "IN_AREA_VERDE","IN_AUDITORIO","IN_BIBLIOTECA","IN_LABORATORIO_CIENCIAS",
   "IN_LABORATORIO_INFORMATICA","IN_PARQUE_INFANTIL",
-  "IN_QUADRA_ESPORTES",
-  "IN_DEPENDENCIAS_PNE","IN_LAVANDERIA",
-  "IN_ESGOTO_REDE_PUBLICA","IN_BANDA_LARGA")
+  "IN_QUADRA_ESPORTES","IN_DEPENDENCIAS_PNE","IN_LAVANDERIA",
+  "IN_BANDA_LARGA"
+  )
 # Criar a fórmula dinâmica
 xformla <- as.formula(paste("~", paste(variaveis, collapse = " + ")))
+xformla <- as.formula(paste("~", paste(selected_variables, collapse = " + ")))
+
 
 # Data Cleaning: Removing schools that did not exist before treatment
 # Filtrar apenas as linhas onde abandono_tot_em não é vazio (não é NA ou não é uma string vazia)
 dta_sp_filtrada <- dta_sp %>% 
   filter(!is.na(abandono_tot_em))
 
+# Filtrando a base dta_sp para anos maiores que 2007
+dta_sp_filtrada2 <- dta_sp_filtrada %>%
+  filter(Ano > 2007)
 
 # Filtrar dados para anos antes de 2015
-antes_2015 <- dta_sp_filtrada %>% filter(Ano < 2015)
+antes_2015 <- dta_sp_filtrada2 %>% filter(Ano < 2015)
 
 # Filtrar dados para anos a partir de 2015
-depois_2015 <- dta_sp_filtrada %>% filter(Ano >= 2015)
+depois_2015 <- dta_sp_filtrada2 %>% filter(Ano >= 2015)
 
 # Identificar CODESC que aparecem apenas depois de 2015, mas não antes
 codesc_antes_2015 <- unique(antes_2015$CODESC)
@@ -289,38 +318,59 @@ codesc_exclusivos_depois_2015 <- setdiff(codesc_depois_2015, codesc_antes_2015)
 codesc_exclusivos_depois_2015
 
 # Remover os CODESC que aparecem apenas depois de 2015
-dta_sp_filtrada2 <- dta_sp_filtrada %>% 
+dta_sp_filtrada3 <- dta_sp_filtrada2 %>% 
   filter(!CODESC %in% codesc_exclusivos_depois_2015)
 
 # Contar o número de anos distintos para cada CODESC
-escolas_por_ano <- dta_sp_filtrada %>%
+escolas_por_ano <- dta_sp_filtrada3 %>%
   group_by(CODESC) %>%
   summarise(anos_presentes = n_distinct(Ano))
 
 # Identificar as escolas que aparecem em todos os anos de 2007 a 2023
 escolas_com_todos_anos <- escolas_por_ano %>%
-  filter(anos_presentes == 17) %>%  # 17 anos de 2007 a 2023
+  filter(anos_presentes == 16) %>%  # 17 anos de 2007 a 2023
   pull(CODESC)
 
 # Filtrar a base original para manter apenas as escolas que aparecem em todos os anos
-dta_sp_filtrada3 <- dta_sp %>% 
+dta_sp_filtrada4 <- dta_sp_filtrada2 %>% 
   filter(CODESC %in% escolas_com_todos_anos)
 
+# Criando a variável 'sem_enem'
+dta_sp_filtrada4$sem_enem <- ifelse(
+  apply(
+    dta_sp_filtrada4[, c("NU_TAXA_PARTICIPACAO", "NU_MEDIA_CN", "NU_MEDIA_CH", 
+             "NU_MEDIA_LP", "NU_MEDIA_MT", "NU_MEDIA_RED", "PC_FORMACAO_DOCENTE")], 
+    1, 
+    function(row) any(is.na(row))
+  ), 1, 0
+)
+
+# Renomeando a coluna
+dta_sp_filtrada4 <- dta_sp_filtrada4 %>%
+  rename(inse_abs = `INSE - VALOR ABSOLUTO`)
+
+dta_sp_filtrada_inse <- dta_sp_filtrada4 %>%
+  filter(INSE_num == 6)
 
 # estimate group-time average treatment effects without covariates
 mw.attgt <- att_gt(yname = "abandono_tot_em",
-                   gname = "first.treat",
-                   idname = "CODESC",
                    tname = "Ano",
-                   xformla = xformla,
-                   data = dta_sp_filtrada3,
+                   idname = "CODESC",
+                   gname = "first.treat",
+                   xformla = ~P001+PC_FORMACAO_DOCENTE+IN_AREA_VERDE,
+                   data = dta_sp_filtrada4,
                    base_period = "universal",
-                   allow_unbalanced_panel = TRUE
-)
-
+                   control_group = "nevertreated",
+                   allow_unbalanced_panel = TRUE,
+                   panel = TRUE
+                   )
+#P001+IN_NOTURNO+IN_DESPENSA+IN_FUND_AI+QT_MAT_BAS_PRETA+QT_MAT_BAS_15_17+QT_MAT_BAS_N+QT_DOC_ESP
 # summarize the results
 summary(mw.attgt)
 
 # plot the results
 # set ylim so that all plots have the same scale along y-axis
-ggdid(mw.attgt, ylim = c(-.059, .059))
+ggdid(mw.attgt, ylim = c(-.05, .05))
+
+agg.ovearll <- aggte(mw.attgt, type = "simple")
+summary(agg.ovearll)
