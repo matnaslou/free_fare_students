@@ -10,12 +10,8 @@ da_cov <- da_cov_2014 %>%
          -IN_MANT_ESCOLA_PRIVADA_ONG,-IN_MANT_ESCOLA_PRIVADA_OSCIP,        
          -IN_MANT_ESCOLA_PRIV_ONG_OSCIP,-IN_MANT_ESCOLA_PRIVADA_SIND,        
          -IN_MANT_ESCOLA_PRIVADA_SIST_S,-IN_MANT_ESCOLA_PRIVADA_S_FINS,
-         -IN_ALIMENTACAO,-IN_NOTURNO,-IN_INF,-IN_INF_PRE,
-         -TP_LOCALIZACAO_DIFERENCIADA,-IN_CONVENIADA_PP,-TP_CONVENIO_PODER_PUBLICO,
-         -IN_LOCAL_FUNC_PREDIO_ESCOLAR,IN_AGUA_FILTRADA,-IN_BANHEIRO_EI,
-         -IN_EDUCACAO_INDIGENA,-TP_INDIGENA_LINGUA,-TP_AEE,-QT_TUR_INF_PRE,
-         -IN_LOCAL_FUNC_OUTROS,-IN_SALA_ATENDIMENTO_ESPECIAL,-CO_LINGUA_INDIGENA_1,
-         -QT_DOC_INF_PRE,-QT_TUR_INF)
+         -freq_mat_bas_parda
+         )
 
 
 # Remover colunas do tipo "character"
@@ -35,7 +31,7 @@ X <- makeX(da_cov, na.impute = FALSE)
 
 # Dependent variable
 y <- da_cov_2014 %>% 
-  pull(treated)
+  pull(treat)
 
 # Determine lambda values 
 lambda_seq <- 10^seq(200, 100, length=100)
@@ -44,11 +40,13 @@ lambda_seq <- 10^seq(200, 100, length=100)
 lasso_model <- glmnet(X, y, alpha=1, lambda=lambda_seq)
 
 # Selecting a lambda value with cross validation
-cv_fit <- cv.glmnet(X, y, alpha=1, family = "binomial")
+cv_fit <- cv.glmnet(X, y, alpha=1, family = binomial(link = "probit"))
+#cv_fit <- cv.glmnet(X, y, alpha=1)
 best_lambda <- cv_fit$lambda.min
 
 # Building final model
-final_model <- glmnet(X, y, alpha=1, lambda=0.25, family = "binomial")
+final_model <- glmnet(X_filtered , y, alpha=0.5, lambda=0.9, family = binomial(link = "probit"))
+#final_model <- glmnet(X, y, alpha=1, lambda=best_lambda)
 
 # Getting coefficients 
 coef(final_model, s=best_lambda)
@@ -67,8 +65,8 @@ selected_variables <- rownames(coef_final)[coef_values != 0]
 selected_variables <- selected_variables[selected_variables != "(Intercept)"]
 
 # Remover Problemáticas
-selected_variables <- selected_variables[selected_variables != "freq_mat_bas_preta"]
-selected_variables <- selected_variables[selected_variables != "freq_mat_bas_parda"]
+#selected_variables <- selected_variables[selected_variables != "freq_mat_bas_preta"]
+#selected_variables <- selected_variables[selected_variables != "freq_mat_bas_parda"]
 
 # Exibir as variáveis selecionadas
 selected_variables
@@ -87,3 +85,4 @@ selected_variables
 #selected_variables <- selected_variables[selected_variables != "CO_LINGUA_INDIGENA_1"]
 #selected_variables <- selected_variables[selected_variables != "QT_DOC_INF_PRE"]
 #selected_variables <- selected_variables[selected_variables != "QT_TUR_INF"]
+selected_variables <- selected_variables[selected_variables != "QT_MAT_BAS_N"]
