@@ -5,6 +5,12 @@
 library(ggplot2)
 library(dplyr)
 library(scales)
+library(data.table)
+
+da <- fread("Dados/Dados Tratados/base_final_br.csv")
+dta_sp <- fread("Dados/Dados Tratados/base_final_sp_todas.csv")
+dta_sp_anos <- fread("Dados/Dados Tratados/base_final_sp_todososanos.csv")
+dta_sp_inse <- fread("Dados/Dados Tratados/base_final_sp_inse6.csv")
 
 # Função para criar o gráfico
 plot_distribuicao <- function(base_dados, coluna_covariada) {
