@@ -233,6 +233,7 @@ gc()
 
 # Exportando
 write.csv(da, "Dados/Dados Tratados/base_final_br.csv", row.names = FALSE)
+write.csv(dta_sp_filtrada, "Dados/Dados Tratados/base_final_sp.csv", row.names = FALSE)
 write.csv(dta_sp_filtrada3, "Dados/Dados Tratados/base_final_sp_todas.csv", row.names = FALSE)
 write.csv(dta_sp_filtrada4, "Dados/Dados Tratados/base_final_sp_todososanos.csv", row.names = FALSE)
 write.csv(dta_sp_filtrada4, "Dados/Dados Tratados/base_final_sp_inse6.csv", row.names = FALSE)
