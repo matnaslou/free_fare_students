@@ -182,18 +182,22 @@ codesc_exclusivos_depois_2015
 dta_sp_filtrada3 <- dta_sp_filtrada2 %>% 
   filter(!CODESC %in% codesc_exclusivos_depois_2015)
 
+# Remover Anos pós Pandemia
+dta_sp_filtrada3 <- dta_sp_filtrada3 %>%
+  filter(Ano < 2020)
+
 # Contar o número de anos distintos para cada CODESC
 escolas_por_ano <- dta_sp_filtrada3 %>%
   group_by(CODESC) %>%
   summarise(anos_presentes = n_distinct(Ano))
 
-# Identificar as escolas que aparecem em todos os anos de 2007 a 2023
+# Identificar as escolas que aparecem em todos os anos de 2008 a 2019
 escolas_com_todos_anos <- escolas_por_ano %>%
-  filter(anos_presentes == 16) %>%  # 17 anos de 2007 a 2023
+  filter(anos_presentes == 12) %>%  # 17 anos de 2007 a 2023
   pull(CODESC)
 
 # Filtrar a base original para manter apenas as escolas que aparecem em todos os anos
-dta_sp_filtrada4 <- dta_sp_filtrada2 %>% 
+dta_sp_filtrada4 <- dta_sp_filtrada3 %>% 
   filter(CODESC %in% escolas_com_todos_anos)
 
 # Criando a variável 'sem_enem'
@@ -236,5 +240,5 @@ write.csv(da, "Dados/Dados Tratados/base_final_br.csv", row.names = FALSE)
 write.csv(dta_sp_filtrada, "Dados/Dados Tratados/base_final_sp.csv", row.names = FALSE)
 write.csv(dta_sp_filtrada3, "Dados/Dados Tratados/base_final_sp_todas.csv", row.names = FALSE)
 write.csv(dta_sp_filtrada4, "Dados/Dados Tratados/base_final_sp_todososanos.csv", row.names = FALSE)
-write.csv(dta_sp_filtrada4, "Dados/Dados Tratados/base_final_sp_inse6.csv", row.names = FALSE)
+write.csv(dta_sp_filtrada_inse, "Dados/Dados Tratados/base_final_sp_inse6.csv", row.names = FALSE)
 

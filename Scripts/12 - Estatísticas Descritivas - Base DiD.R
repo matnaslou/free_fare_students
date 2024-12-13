@@ -8,9 +8,11 @@ library(scales)
 library(data.table)
 
 da <- fread("Dados/Dados Tratados/base_final_br.csv")
-dta_sp <- fread("Dados/Dados Tratados/base_final_sp_todas.csv")
+dta_sp <- fread("Dados/Dados Tratados/base_final_sp.csv")
+dta_sp_all <- fread("Dados/Dados Tratados/base_final_sp_todas.csv")
 dta_sp_anos <- fread("Dados/Dados Tratados/base_final_sp_todososanos.csv")
 dta_sp_inse <- fread("Dados/Dados Tratados/base_final_sp_inse6.csv")
+
 
 # Função para criar o gráfico
 plot_distribuicao <- function(base_dados, coluna_covariada) {
@@ -95,11 +97,11 @@ plot_codesc_perdidos <- function(base_dados) {
   ggplot(perdas, aes(x = Ano, y = perdidos)) +
     geom_bar(stat = "identity", fill = "salmon", color = "black") +
     labs(
-      title = "Quantidade de CODESC Perdidos de um Ano para o Seguinte",
-      x = "Ano",
-      y = "Quantidade de CODESC Perdidos"
+      x = "Year",
+      y = "Quantity"
     ) +
-    theme_minimal()
+    theme_classic() +
+    theme(axis.title = element_text(size = 20))
 }
 
 # Chamar a função passando a base de dados
@@ -136,4 +138,52 @@ plot_codasc_by_treated <- function(data) {
     )
 }
 
-plot_codasc_by_treated(dta_sp_filtrada3)
+plot_codasc_by_treated(da2)
+
+# Função para contar CODESC únicos e gerar tabela em LaTeX
+gerar_tabela_latex <- function(data) {
+  # Contar CODESC únicos para cada valor de treated
+  contagem <- data %>%
+    group_by(treated) %>%
+    summarise(Unique_CODESC = n_distinct(CODESC)) %>%
+    ungroup()
+  
+  # Gerar o código da tabela em LaTeX
+  tabela_latex <- paste0(
+    "\\begin{table}[ht]\n",
+    "\\centering\n",
+    "\\begin{tabular}{lc}\n",
+    "\\hline\n",
+    "Treated & Unique CODESC \\\\\n",
+    "\\hline\n",
+    paste(contagem[["treated"]], "&", contagem$Unique_CODESC, "\\\\\n", collapse = ""),
+    "\\hline\n",
+    "\\end{tabular}\n",
+    "\\caption{Unique CODESC counts by treatment status}\n",
+    "\\label{tab:unique_cod_treated}\n",
+    "\\end{table}"
+  )
+  
+  return(tabela_latex)
+}
+
+# Gerar a tabela LaTeX
+codigo_latex <- gerar_tabela_latex(dta_sp_anos)
+
+# Exibir o código
+cat(codigo_latex)
+
+
+# Função para contar CODESC únicos que aparecem apenas após 2015
+contar_codesc_apenas_apos_2015 <- function(data) {
+  # Filtrar CODESC que aparecem após 2015
+  cod_apenas_apos_2015 <- data %>%
+    group_by(CODESC) %>%
+    summarise(min_ano = min(Ano)) %>%
+    filter(min_ano >= 2015) %>%
+    nrow()
+  
+  return(cod_apenas_apos_2015)
+}
+
+contar_codesc_apenas_apos_2015(dta_sp)
