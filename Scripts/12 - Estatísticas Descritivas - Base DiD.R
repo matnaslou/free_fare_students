@@ -6,6 +6,7 @@ library(ggplot2)
 library(dplyr)
 library(scales)
 library(data.table)
+library(tidyr)
 
 da <- fread("Dados/Dados Tratados/base_final_br.csv")
 dta_sp <- fread("Dados/Dados Tratados/base_final_sp.csv")
@@ -25,34 +26,34 @@ plot_distribuicao <- function(base_dados, coluna_covariada) {
   # Cria o gráfico
   base_dados %>%
     filter(Ano == 2014) %>%
-    ggplot(aes(x = .data[[coluna_covariada]], fill = factor(treat, levels = c(1, 0), labels = c("Pública", "Privada")))) + 
+    ggplot(aes(x = .data[[coluna_covariada]], fill = factor(treat, levels = c(1, 0), labels = c("Public", "Private")))) + 
     geom_density(alpha = 0.5) +
     scale_fill_manual(
-      values = c("Pública" = "blue", "Privada" = "red"),  # Azul para Pública e Vermelho para Privada
-      labels = c("Pública", "Privada")
+      values = c("Public" = "blue", "Private" = "red"),  # Azul para Pública e Vermelho para Privada
+      labels = c("Public", "Private")
     ) +
     labs(
-      title = paste("Distribuição da covariada:", coluna_covariada),
+      #title = paste("Distribuição da covariada:", coluna_covariada),
       x = coluna_covariada,
-      y = "Densidade",
-      fill = "Tipo de Escola"
+      y = "Density",
+      fill = "School Type"
     ) +
     # Adiciona as linhas verticais para as médias de cada grupo, sem legenda
     geom_vline(data = medias, 
-               aes(xintercept = media, color = factor(treat, levels = c(1, 0), labels = c("Pública", "Privada"))),
+               aes(xintercept = media, color = factor(treat, levels = c(1, 0), labels = c("Public", "Private"))),
                linetype = "dashed", size = 1, show.legend = FALSE) +  # Remove a legenda para as linhas de média
-    scale_color_manual(values = c("Pública" = "blue", "Privada" = "red")) +  # Ajuste das cores
+    scale_color_manual(values = c("Public" = "blue", "Private" = "red")) +  # Ajuste das cores
     theme_minimal() +
     theme(
       panel.grid.major = element_blank(),  # Remove as linhas principais do grid
       panel.grid.minor = element_blank()   # Remove as linhas menores do grid
     ) +
-    scale_x_continuous(labels = label_number(scale = 1, suffix = "")) +  # Formatação do eixo X
-    scale_y_continuous(labels = label_number(scale = 1, suffix = ""))    # Formatação do eixo Y
+    scale_x_continuous(labels = label_number(scale = 1, suffix = "")) #+  # Formatação do eixo X
+    #scale_y_continuous(labels = label_number(scale = 1, suffix = ""))    # Formatação do eixo Y
 }
 
 # Exemplo de uso
-plot_distribuicao(dta_sp_filtrada4, "sem_enem")
+plot_distribuicao(dta_sp_anos, "P001")
 
 # Função para criar o gráfico
 plot_codesc_por_ano <- function(base_dados) {
@@ -168,7 +169,7 @@ gerar_tabela_latex <- function(data) {
 }
 
 # Gerar a tabela LaTeX
-codigo_latex <- gerar_tabela_latex(dta_sp_anos)
+codigo_latex <- gerar_tabela_latex(dta_sp_inse)
 
 # Exibir o código
 cat(codigo_latex)
@@ -187,3 +188,47 @@ contar_codesc_apenas_apos_2015 <- function(data) {
 }
 
 contar_codesc_apenas_apos_2015(dta_sp)
+
+# Função para gerar o plot
+plot_abandono <- function(data) {
+  # Verifica se a base tem as colunas necessárias
+  required_cols <- c("Ano", "treat", "abandono_tot_em", "abandono_3a_em")
+  if (!all(required_cols %in% colnames(data))) {
+    stop("A base deve conter as colunas: 'Ano', 'treat', 'abandono_tot_em', 'abandono_3a_em'.")
+  }
+  
+  # Calcula a média de abandono por ano e tipo de escola
+  df_plot <- data %>%
+    group_by(Ano, treat) %>%
+    summarise(
+      mean_abandono_tot = mean(abandono_tot_em, na.rm = TRUE),
+      mean_abandono_3a = mean(abandono_3a_em, na.rm = TRUE)
+    ) %>%
+    pivot_longer(cols = starts_with("mean_abandono"), 
+                 names_to = "variable", 
+                 values_to = "mean") %>%
+    mutate(
+      variable = recode(variable, 
+                        "mean_abandono_tot" = "Total Dropout Rate (EM)", 
+                        "mean_abandono_3a" = "3rd Year Dropout Rate (EM)"),
+      treat_label = ifelse(treat == 1, "Public Schools", "Private Schools")
+    )
+  
+  # Cria o plot
+  ggplot(df_plot, aes(x = Ano, y = mean, color = treat_label, linetype = variable)) +
+    geom_line(size = 1) +
+    geom_point(size = 2) +
+    labs(
+      x = "Year",
+      y = "Average Dropout Rate (%)",
+      color = "School Type",
+      linetype = "Dropout Type",
+      title = "Average Dropout Rates for Public and Private Schools"
+    ) +
+    theme_minimal() +
+    theme(legend.position = "bottom") +
+    scale_color_manual(values = c("Public Schools" = "blue", "Private Schools" = "red"))
+}
+
+# Exemplo de uso
+plot_abandono(dta_sp_anos)
