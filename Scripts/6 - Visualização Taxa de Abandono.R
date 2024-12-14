@@ -1,8 +1,10 @@
 # Carregar bibliotecas necessárias
 library(dplyr)
 library(ggplot2)
+library(data.table)
+library(scales) # Para a função pretty_breaks()
 
-d <- read.csv("C:/Users/rosan/Downloads/rend_esc.csv")
+d <- fread("Dados/Dados Tratados/rend_esc.csv")
 da <- select(d,c(Ano,cod_mun,CODESC,abandono_tot_em,aprov_tot_em,reprov_tot_em))
 
 nrow(da[da$cod_mun== 3509007 & da$abandono_tot_em == 0,])
@@ -59,23 +61,29 @@ df_combined <- d_pais %>%
   left_join(df_cidades, by = "Ano") %>%
   left_join(df_restante, by = "Ano")
 
+df_combined <- df_combined %>%
+  filter(Ano < 2020 & Ano > 2007)
+
 # Criar o gráfico
-ggplot(df_combined, aes(x = Ano)) +
-  geom_line(aes(y = media_taxa_abandono_pais, color = "Nacional"), size = 1) +
-  geom_point(aes(y = media_taxa_abandono_pais, color = "Nacional"), size = 2) +
-  geom_line(aes(y = media_taxa_abandono, color = "Cidade de São Paulo"), size = 1) +
-  geom_point(aes(y = media_taxa_abandono, color = "Cidade de São Paulo"), size = 2) +
-  geom_line(aes(y = media_taxa_abandono_estado_sp, color = "Estado de São Paulo"), linetype = "dashed", size = 1) +
-  geom_point(aes(y = media_taxa_abandono_estado_sp, color = "Estado de São Paulo"), shape = 17, size = 2) +
-  geom_line(aes(y = media_taxa_abandono_cidades, color = "RMSP"), linetype = "dotted", size = 1) +
-  geom_point(aes(y = media_taxa_abandono_cidades, color = "RMSP"), shape = 15, size = 2) +
-  geom_line(aes(y = media_taxa_abandono_restante, color = "Restante da Base"), linetype = "dotdash", size = 1) +
-  geom_point(aes(y = media_taxa_abandono_restante, color = "Restante da Base"), shape = 18, size = 2) +
-  labs(title = "Taxa de Abandono Médio por Ano",
-       x = "Ano",
-       y = "Taxa de Abandono Médio (%)",
-       color = "Legendas") +
-  theme_minimal()
+ggplot(df_combined, aes(x = as.integer(Ano))) +
+  geom_line(aes(y = media_taxa_abandono_pais, color = "National"), size = 1) +
+  geom_point(aes(y = media_taxa_abandono_pais, color = "National"), size = 2) +
+  geom_line(aes(y = media_taxa_abandono, color = "City of São Paulo"), size = 1) +
+  geom_point(aes(y = media_taxa_abandono, color = "City of São Paulo"), size = 2) +
+  geom_line(aes(y = media_taxa_abandono_estado_sp, color = "São Paulo State"), linetype = "dashed", size = 1) +
+  geom_point(aes(y = media_taxa_abandono_estado_sp, color = "São Paulo State"), shape = 17, size = 2) +
+  geom_line(aes(y = media_taxa_abandono_cidades, color = "Metropolitan Region (Excluding São Paulo)"), linetype = "dotted", size = 1) +
+  geom_point(aes(y = media_taxa_abandono_cidades, color = "Metropolitan Region (Excluding São Paulo)"), shape = 15, size = 2) +
+  geom_line(aes(y = media_taxa_abandono_restante, color = "Remainder of Brazil (Excluding State of São Paulo)"), linetype = "dotdash", size = 1) +
+  geom_point(aes(y = media_taxa_abandono_restante, color = "Remainder of Brazil (Excluding State of São Paulo)"), shape = 18, size = 2) +
+  labs(#title = "Taxa de Abandono Médio por Ano",
+       x = "Year",
+       y = "Average Dropout Rate (%)",
+       color = "Region") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  scale_x_continuous(breaks = seq(2008, 2019, 1)) + # Mostra de 2008 a 2019 com intervalo de 1
+  scale_y_continuous(breaks = pretty_breaks())
 
 summary(d$abandono_tot_em)
 summary(d$abandono_tot_em)
