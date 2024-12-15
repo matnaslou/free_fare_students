@@ -14,6 +14,9 @@ sp_2007 <- read.dbf("Dados/OD 2007/Banco de dados/OD_2007_v2d.dbf")
 em17 <- sp_2017[sp_2017$ESTUDA%in%4,]
 em07 <- sp_2007[sp_2007$ESTUDA%in%4,]
 
+# viajens escola
+vem07 <- em07[em07$MOTIVO_D %in% 4,]
+
 # Verifica IDs com mais de um valor de DATA
 ids_com_varias_datas <- sp_2017 %>%
   group_by(ID_PESS) %>%                 # Agrupa por ID_PESS
@@ -24,10 +27,12 @@ ids_com_varias_datas <- sp_2017 %>%
 ids_com_varias_datas # Vazio
 
 
+# Calculate the average hour of going to school
+average_hour_g <- mean(vem07$H_SAIDA, na.rm = TRUE) 
+average_min_g <- mean(em07$MIN_SAIDA, na.rm = TRUE)
 
-
-
-table(sp_2017$TIPVG[sp_2017$MOTIVO_D%in%4 & sp_2017$TIPO_ESC%in%1])
+table(em07$H_SAIDA[em07$MOTIVO_D%in%4])
+table(sp_2017$H_SAIDA[sp_2017$MOTIVO_D%in%4 & sp_2017$TIPO_ESC%in%1])
 
 
 
