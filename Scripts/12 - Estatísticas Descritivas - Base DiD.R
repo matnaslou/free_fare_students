@@ -14,6 +14,9 @@ dta_sp_all <- fread("Dados/Dados Tratados/base_final_sp_todas.csv")
 dta_sp_anos <- fread("Dados/Dados Tratados/base_final_sp_todososanos.csv")
 dta_sp_inse <- fread("Dados/Dados Tratados/base_final_sp_inse6.csv")
 
+# Treat Variable (Value 1 for every treated unit, 0 otherwise)
+da <- da %>%
+  mutate(treat = ifelse(rede %in% c("Particular", "Privada"), 0, 1))
 
 # Função para criar o gráfico
 plot_distribuicao <- function(base_dados, coluna_covariada) {
@@ -231,4 +234,10 @@ plot_abandono <- function(data) {
 }
 
 # Exemplo de uso
-plot_abandono(dta_sp_anos)
+plot_abandono(da[da$cod_mun == 3518800])
+# RJ 3304557
+# Curitiba 4106902
+# Campinas 3509502
+# Brasilia 5300108
+# BH 3106200
+# Fortaleza 2304400
