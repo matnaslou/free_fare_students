@@ -29,11 +29,11 @@ plot_distribuicao <- function(base_dados, coluna_covariada) {
   # Cria o gráfico
   base_dados %>%
     filter(Ano == 2014) %>%
-    ggplot(aes(x = .data[[coluna_covariada]], fill = factor(treat, levels = c(1, 0), labels = c("Public", "Private")))) + 
+    ggplot(aes(x = .data[[coluna_covariada]], fill = factor(treat, levels = c(1, 0), labels = c("Treated", "Control")))) + 
     geom_density(alpha = 0.5) +
     scale_fill_manual(
-      values = c("Public" = "blue", "Private" = "red"),  # Azul para Pública e Vermelho para Privada
-      labels = c("Public", "Private")
+      values = c("Treated" = "blue", "Control" = "red"),  # Azul para Pública e Vermelho para Privada
+      labels = c("Treated", "Control")
     ) +
     labs(
       #title = paste("Distribuição da covariada:", coluna_covariada),
@@ -43,9 +43,9 @@ plot_distribuicao <- function(base_dados, coluna_covariada) {
     ) +
     # Adiciona as linhas verticais para as médias de cada grupo, sem legenda
     geom_vline(data = medias, 
-               aes(xintercept = media, color = factor(treat, levels = c(1, 0), labels = c("Public", "Private"))),
+               aes(xintercept = media, color = factor(treat, levels = c(1, 0), labels = c("Treated", "Control"))),
                linetype = "dashed", size = 1, show.legend = FALSE) +  # Remove a legenda para as linhas de média
-    scale_color_manual(values = c("Public" = "blue", "Private" = "red")) +  # Ajuste das cores
+    scale_color_manual(values = c("Treated" = "blue", "Control" = "red")) +  # Ajuste das cores
     theme_minimal() +
     theme(
       panel.grid.major = element_blank(),  # Remove as linhas principais do grid
@@ -56,7 +56,7 @@ plot_distribuicao <- function(base_dados, coluna_covariada) {
 }
 
 # Exemplo de uso
-plot_distribuicao(dta_sp_anos, "P001")
+plot_distribuicao(da_filtrada4, "INSE_num")
 
 # Função para criar o gráfico
 plot_codesc_por_ano <- function(base_dados) {
@@ -214,7 +214,7 @@ plot_abandono <- function(data) {
       variable = recode(variable, 
                         "mean_abandono_tot" = "Total Dropout Rate (EM)", 
                         "mean_abandono_3a" = "3rd Year Dropout Rate (EM)"),
-      treat_label = ifelse(treat == 1, "Public Schools", "Private Schools")
+      treat_label = ifelse(treat == 1, "Treated Schools", "Control Schools")
     )
   
   # Cria o plot
@@ -230,11 +230,11 @@ plot_abandono <- function(data) {
     ) +
     theme_minimal() +
     theme(legend.position = "bottom") +
-    scale_color_manual(values = c("Public Schools" = "blue", "Private Schools" = "red"))
+    scale_color_manual(values = c("Treated Schools" = "blue", "Control Schools" = "red"))
 }
 
 # Exemplo de uso
-plot_abandono(da[da$cod_mun == 3518800])
+plot_abandono(da_filtrada4)
 # RJ 3304557
 # Curitiba 4106902
 # Campinas 3509502
