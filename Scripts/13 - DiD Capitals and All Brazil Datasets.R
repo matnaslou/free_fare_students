@@ -127,10 +127,12 @@ da_capitais <- da_capitais %>%
   mutate(abandono_2008 = ifelse(Ano == 2008, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
   mutate(abandono_2009 = ifelse(Ano == 2009, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
   mutate(abandono_2010 = ifelse(Ano == 2010, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
+  mutate(abandono_2012 = ifelse(Ano == 2012, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
   group_by(CODESC) %>% # Agrupa por escola
   mutate(abandono_2008 = first(na.omit(abandono_2008))) %>% # Propaga o valor de 2008 para todas as linhas da escola
   mutate(abandono_2009 = first(na.omit(abandono_2009))) %>% # Propaga o valor de 2008 para todas as linhas da escola
   mutate(abandono_2010 = first(na.omit(abandono_2010))) %>% # Propaga o valor de 2008 para todas as linhas da escola
+  mutate(abandono_2012 = first(na.omit(abandono_2012))) %>% # Propaga o valor de 2008 para todas as linhas da escola
   ungroup() # Remove o agrupamento
 
 
@@ -156,7 +158,7 @@ mw.attgt <- att_gt(yname = "abandono_tot_em",
                    panel = TRUE,
                    anticipation = 0
 )
-
+#
 # summarize the results
 summary(mw.attgt)
 
