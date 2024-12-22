@@ -127,12 +127,18 @@ da_capitais <- da_capitais %>%
   mutate(abandono_2008 = ifelse(Ano == 2008, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
   mutate(abandono_2009 = ifelse(Ano == 2009, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
   mutate(abandono_2010 = ifelse(Ano == 2010, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
+  mutate(abandono_2011 = ifelse(Ano == 2011, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
   mutate(abandono_2012 = ifelse(Ano == 2012, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
+  mutate(abandono_2013 = ifelse(Ano == 2013, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
+  mutate(abandono_2014 = ifelse(Ano == 2014, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
   group_by(CODESC) %>% # Agrupa por escola
   mutate(abandono_2008 = first(na.omit(abandono_2008))) %>% # Propaga o valor de 2008 para todas as linhas da escola
   mutate(abandono_2009 = first(na.omit(abandono_2009))) %>% # Propaga o valor de 2008 para todas as linhas da escola
   mutate(abandono_2010 = first(na.omit(abandono_2010))) %>% # Propaga o valor de 2008 para todas as linhas da escola
+  mutate(abandono_2011 = first(na.omit(abandono_2011))) %>% # Propaga o valor de 2008 para todas as linhas da escola
   mutate(abandono_2012 = first(na.omit(abandono_2012))) %>% # Propaga o valor de 2008 para todas as linhas da escola
+  mutate(abandono_2013 = first(na.omit(abandono_2013))) %>% # Propaga o valor de 2008 para todas as linhas da escola
+  mutate(abandono_2014 = first(na.omit(abandono_2014))) %>% # Propaga o valor de 2008 para todas as linhas da escola
   ungroup() # Remove o agrupamento
 
 
@@ -147,22 +153,26 @@ xformla <- as.formula(paste("~", paste(variaveis, collapse = " + ")))
 
 # estimate group-time average treatment effects without covariates
 mw.attgt <- att_gt(yname = "abandono_tot_em",
-                   tname = "Ano",
+                  tname = "Ano",
                    idname = "CODESC",
                    gname = "first.treat",
-                   xformla = ~INSE_4+INSE_5+INSE_6+NU_MEDIA_MT_x+NU_MEDIA_CN_x+sem_enem+IN_LABORATORIO_CIENCIAS+QT_DOC_MED,
-                   data = da_filtrada4,
+                   xformla = ~abandono_2008+abandono_2009+abandono_2014+INSE_4+INSE_6+INSE_7+IN_LABORATORIO_CIENCIAS+QT_DOC_MED+QT_SALAS_UTILIZADAS,
+                   data = da_capitais,
                    base_period = "universal",
                    control_group = "nevertreated",
                    allow_unbalanced_panel = FALSE,
                    panel = TRUE,
-                   anticipation = 0
+                   anticipation = 0,
+                   print_details = TRUE
 )
-#
+# Testes com da_capitais
+# abandono_2008+abandono_2009+abandono_2014+INSE_4+INSE_6+INSE_7
+# abandono_2008+abandono_2009+abandono_2014+INSE_4+INSE_6+INSE_7+QT_DOC_MED+IN_LABORATORIO_CIENCIAS
+# IN_LABORATORIO_CIENCIAS+QT_DOC_MED+abandono_2008+abandono_2009+abandono_2014+INSE_4+INSE_5+INSE_7+sem_enem+NU_MEDIA_MT_x+NU_MEDIA_CN_x
 # summarize the results
 summary(mw.attgt)
 
 
 # plot the results
 # set ylim so that all plots have the same scale along y-axis
-ggdid(mw.attgt, ylim = c(-.05, .05))
+ggdid(mw.attgt, ylim = c(-.07, .07))
