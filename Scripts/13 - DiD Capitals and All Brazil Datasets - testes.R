@@ -3,6 +3,7 @@ library(data.table)
 library(did)
 
 da <- fread("Dados/Dados Tratados/base_final_br.csv")
+gc()
 
 da <- da %>%
   filter(rede != "Particular" & rede != "Privada")
@@ -28,7 +29,7 @@ da_filtrada <- da %>%
 
 # Filtrando a base da para anos maiores que 2007
 da_filtrada2 <- da_filtrada %>%
-  filter(Ano > 2008)
+  filter(Ano > 2007)
 
 # Filtrar dados para anos antes de 2015
 antes_2015 <- da_filtrada2 %>% filter(Ano < 2015)
@@ -61,7 +62,7 @@ escolas_por_ano <- da_filtrada3 %>%
 
 # Identificar as escolas que aparecem em todos os anos de 2008 a 2019
 escolas_com_todos_anos <- escolas_por_ano %>%
-  filter(anos_presentes == 11) %>%  # 17 anos de 2007 a 2023
+  filter(anos_presentes == 12) %>%  # 17 anos de 2007 a 2023
   pull(CODESC)
 
 # Filtrar a base original para manter apenas as escolas que aparecem em todos os anos
@@ -152,24 +153,22 @@ variaveis <- c(
 xformla <- as.formula(paste("~", paste(variaveis, collapse = " + ")))
 
 # estimate group-time average treatment effects without covariates
-mw.attgt <- att_gt(yname = "abandono_3a_em",
+mw.attgt <- att_gt(yname = "abandono_tot_em",
                   tname = "Ano",
                    idname = "CODESC",
                    gname = "first.treat",
-                   xformla = ~abandono_2008+abandono_2009+abandono_2010+abandono_2011+abandono_2012+abandono_2013+abandono_2014,
+                   xformla = ~abandono_2008+abandono_2009+abandono_2010+abandono_2011,
                    data = da_capitais,
                    base_period = "universal",
                    control_group = "nevertreated",
                    allow_unbalanced_panel = FALSE,
                    panel = TRUE,
                    anticipation = 0,
-                   print_details = TRUE,
-                   est_method = "ipw",
-                  weightsname = "QT_MAT_MED"
+                   print_details = TRUE
 )
+
 # Testes com da_capitais
 # abandono_2008+abandono_2009+abandono_2014+INSE_4+INSE_6+INSE_7
-# abandono_2008+abandono_2009+abandono_2014+INSE_4+INSE_6+INSE_7+IN_LABORATORIO_CIENCIAS+QT_DOC_MED+QT_SALAS_UTILIZADAS
 # abandono_2008+abandono_2009+abandono_2014+INSE_4+INSE_6+INSE_7+QT_DOC_MED+IN_LABORATORIO_CIENCIAS
 # IN_LABORATORIO_CIENCIAS+QT_DOC_MED+abandono_2008+abandono_2009+abandono_2014+INSE_4+INSE_5+INSE_7+sem_enem+NU_MEDIA_MT_x+NU_MEDIA_CN_x
 # summarize the results
@@ -178,7 +177,4 @@ summary(mw.attgt)
 
 # plot the results
 # set ylim so that all plots have the same scale along y-axis
-ggdid(mw.attgt, ylim = c(-.05, .05))
-
-es <- aggte(mw.attgt, type = "simple")
-summary(es)
+ggdid(mw.attgt, ylim = c(-.07, .07))

@@ -74,7 +74,7 @@ plot_codesc_por_ano <- function(base_dados) {
 }
 
 # Chamar a função passando a base de dados
-plot_codesc_por_ano(dta_sp_filtrada4)
+plot_codesc_por_ano(da_capitais)
 
 
 # Função para calcular a perda de CODESC únicos entre os anos
@@ -105,11 +105,11 @@ plot_codesc_perdidos <- function(base_dados) {
       y = "Quantity"
     ) +
     theme_classic() +
-    theme(axis.title = element_text(size = 20))
+    theme(axis.title = element_text(size = 10))
 }
 
 # Chamar a função passando a base de dados
-plot_codesc_perdidos(dta_sp_filtrada)
+plot_codesc_perdidos(da_filtrada2)
 
 
 plot_codasc_by_treated <- function(data) {

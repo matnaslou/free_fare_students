@@ -96,14 +96,35 @@ da_filtrada4$INSE_4 <-ifelse(da_filtrada4$INSE_num%in%4,1,0)
 da_filtrada4$INSE_5 <-ifelse(da_filtrada4$INSE_num%in%5,1,0)
 da_filtrada4$INSE_6 <-ifelse(da_filtrada4$INSE_num%in%6,1,0)
 da_filtrada4$INSE_7 <-ifelse(da_filtrada4$INSE_num%in%7,1,0)
-da_filtrada4
+#da_filtrada4
 
-# Base de dados apenas com escolas com INSE "Alto"
-da_filtrada_inse <- da_filtrada4 %>%
-  filter(INSE_num == 6)
+# Criar uma nova variável com a taxa de abandono da escola em 2008
+da_filtrada4 <- da_filtrada4 %>%
+  mutate(abandono_2009 = ifelse(Ano == 2009, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
+  mutate(abandono_2010 = ifelse(Ano == 2010, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
+  mutate(abandono_2011 = ifelse(Ano == 2011, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
+  mutate(abandono_2012 = ifelse(Ano == 2012, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
+  mutate(abandono_2013 = ifelse(Ano == 2013, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
+  mutate(abandono_2014 = ifelse(Ano == 2014, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
+  group_by(CODESC) %>% # Agrupa por escola
+  mutate(abandono_2009 = first(na.omit(abandono_2009))) %>% # Propaga o valor de 2008 para todas as linhas da escola
+  mutate(abandono_2010 = first(na.omit(abandono_2010))) %>% # Propaga o valor de 2008 para todas as linhas da escola
+  mutate(abandono_2011 = first(na.omit(abandono_2011))) %>% # Propaga o valor de 2008 para todas as linhas da escola
+  mutate(abandono_2012 = first(na.omit(abandono_2012))) %>% # Propaga o valor de 2008 para todas as linhas da escola
+  mutate(abandono_2013 = first(na.omit(abandono_2013))) %>% # Propaga o valor de 2008 para todas as linhas da escola
+  mutate(abandono_2014 = first(na.omit(abandono_2014))) %>% # Propaga o valor de 2008 para todas as linhas da escola
+  ungroup() # Remove o agrupamento
+
+# Calcular a média de abandono para cada escola no período de 2008 a 2014 e adicionar à base original
+da_filtrada4 <- da_filtrada4 %>%
+  group_by(CODESC) %>% # Agrupa por escola
+  mutate(media_abandono = mean(abandono_tot_em[Ano >= 2008 & Ano <= 2014], na.rm = TRUE)) %>%
+  ungroup() # Remove o agrupamento
+
 
 # Lista dos códigos IBGE das capitais do Sul e Sudeste
-cod_capitais <- c(4106902, 4205407, 4314902, 3550308, 3304557, 3106200, 3205309)
+cod_capitais <- c(4106902, 4205407, 4314902, 3550308, 
+                  3304557, 3106200, 3205309)
 
 da_capitais <- da_filtrada4 %>%
   filter(cod_mun %in% cod_capitais)
@@ -116,47 +137,16 @@ da_capitais$cidade4 <- ifelse(da_capitais$cod_mun == 4314902,1,0)
 da_capitais$cidade5 <- ifelse(da_capitais$cod_mun == 3106200,1,0) 
 da_capitais$cidade6 <- ifelse(da_capitais$cod_mun == 3205309,1,0)
 
-# Calcular a média de abandono para cada escola no período de 2008 a 2014 e adicionar à base original
-da_capitais <- da_capitais %>%
-  group_by(CODESC) %>% # Agrupa por escola
-  mutate(media_abandono = mean(abandono_tot_em[Ano >= 2008 & Ano <= 2014], na.rm = TRUE)) %>%
-  ungroup() # Remove o agrupamento
+da_capitais_alta <- da_capitais[is.na(da_capitais$P001) | da_capitais$P001>5457926,]
+da_capitais_baixa <- da_capitais[is.na(da_capitais$P001) | da_capitais$P001<5457926,]
 
-# Criar uma nova variável com a taxa de abandono da escola em 2008
-da_capitais <- da_capitais %>%
-  mutate(abandono_2008 = ifelse(Ano == 2008, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
-  mutate(abandono_2009 = ifelse(Ano == 2009, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
-  mutate(abandono_2010 = ifelse(Ano == 2010, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
-  mutate(abandono_2011 = ifelse(Ano == 2011, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
-  mutate(abandono_2012 = ifelse(Ano == 2012, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
-  mutate(abandono_2013 = ifelse(Ano == 2013, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
-  mutate(abandono_2014 = ifelse(Ano == 2014, abandono_tot_em, NA)) %>% # Adiciona os valores de 2008
-  group_by(CODESC) %>% # Agrupa por escola
-  mutate(abandono_2008 = first(na.omit(abandono_2008))) %>% # Propaga o valor de 2008 para todas as linhas da escola
-  mutate(abandono_2009 = first(na.omit(abandono_2009))) %>% # Propaga o valor de 2008 para todas as linhas da escola
-  mutate(abandono_2010 = first(na.omit(abandono_2010))) %>% # Propaga o valor de 2008 para todas as linhas da escola
-  mutate(abandono_2011 = first(na.omit(abandono_2011))) %>% # Propaga o valor de 2008 para todas as linhas da escola
-  mutate(abandono_2012 = first(na.omit(abandono_2012))) %>% # Propaga o valor de 2008 para todas as linhas da escola
-  mutate(abandono_2013 = first(na.omit(abandono_2013))) %>% # Propaga o valor de 2008 para todas as linhas da escola
-  mutate(abandono_2014 = first(na.omit(abandono_2014))) %>% # Propaga o valor de 2008 para todas as linhas da escola
-  ungroup() # Remove o agrupamento
-
-
-
-variaveis <- c(
-  # School Structure
-  "abandono_2008", "INSE_4","INSE_5","INSE_6",
-  "IN_LABORATORIO_CIENCIAS","QT_DOC_MED","QT_MAT_EJA_MED"
-)
-# Criar a fórmula dinâmica
-xformla <- as.formula(paste("~", paste(variaveis, collapse = " + ")))
 
 # estimate group-time average treatment effects without covariates
-mw.attgt <- att_gt(yname = "abandono_3a_em",
+mw.attgt <- att_gt(yname = "abandono_tot_em",
                   tname = "Ano",
                    idname = "CODESC",
                    gname = "first.treat",
-                   xformla = ~abandono_2008+abandono_2009+abandono_2010+abandono_2011+abandono_2012+abandono_2013+abandono_2014,
+                   xformla = ~1,
                    data = da_capitais,
                    base_period = "universal",
                    control_group = "nevertreated",
@@ -164,9 +154,10 @@ mw.attgt <- att_gt(yname = "abandono_3a_em",
                    panel = TRUE,
                    anticipation = 0,
                    print_details = TRUE,
-                   est_method = "ipw",
-                  weightsname = "QT_MAT_MED"
+                  weightsname = "QT_MAT_MED", 
+                  est_method = "ipw"
 )
+
 # Testes com da_capitais
 # abandono_2008+abandono_2009+abandono_2014+INSE_4+INSE_6+INSE_7
 # abandono_2008+abandono_2009+abandono_2014+INSE_4+INSE_6+INSE_7+IN_LABORATORIO_CIENCIAS+QT_DOC_MED+QT_SALAS_UTILIZADAS
@@ -175,10 +166,59 @@ mw.attgt <- att_gt(yname = "abandono_3a_em",
 # summarize the results
 summary(mw.attgt)
 
+variaveis <- c(
+  # School Structure
+  "abandono_2009","abandono_2010","abandono_2011",
+  "abandono_2012","abandono_2013","abandono_2014"
+)
+# Criar a fórmula dinâmica
+xformla <- as.formula(paste("~", paste(variaveis, collapse = " + ")))
+
+
+# estimate group-time average treatment effects without covariates
+mw.attgt2 <- att_gt(yname = "abandono_tot_em",
+                   tname = "Ano",
+                   idname = "CODESC",
+                   gname = "first.treat",
+                   xformla = xformla,
+                   data = da_capitais,
+                   base_period = "universal",
+                   control_group = "nevertreated",
+                   allow_unbalanced_panel = FALSE,
+                   panel = TRUE,
+                   anticipation = 0,
+                   print_details = TRUE,
+                   weightsname = "QT_MAT_MED", 
+                   est_method = "ipw"
+)
+
+# summarize the results
+summary(mw.attgt2)
+
+# estimate group-time average treatment effects without covariates
+mw.attgt3 <- att_gt(yname = "abandono_tot_em",
+                    tname = "Ano",
+                    idname = "CODESC",
+                    gname = "first.treat",
+                    xformla = ~media_abandono,
+                    data = da_capitais,
+                    base_period = "universal",
+                    control_group = "nevertreated",
+                    allow_unbalanced_panel = FALSE,
+                    panel = TRUE,
+                    anticipation = 0,
+                    print_details = TRUE,
+                    weightsname = "QT_MAT_MED", 
+                    est_method = "ipw"
+)
+
+# summarize the results
+summary(mw.attgt3)
+
 
 # plot the results
 # set ylim so that all plots have the same scale along y-axis
-ggdid(mw.attgt, ylim = c(-.05, .05))
-
+ggdid(mw.attgt2, ylim = c(-.07, .07))
 es <- aggte(mw.attgt, type = "simple")
 summary(es)
+ggdid(es)
