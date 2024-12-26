@@ -16,6 +16,7 @@ em07 <- sp_2007[sp_2007$ESTUDA%in%4,]
 
 # viajens escola
 vem07 <- em07[em07$MOTIVO_D %in% 4,]
+vem17 <- em17[em17$MOTIVO_D %in% 4,]
 
 # Verifica IDs com mais de um valor de DATA
 ids_com_varias_datas <- sp_2017 %>%
@@ -28,8 +29,10 @@ ids_com_varias_datas # Vazio
 
 
 # Calculate the average hour of going to school
-average_hour_g <- mean(vem07$H_SAIDA, na.rm = TRUE) 
-average_min_g <- mean(em07$MIN_SAIDA, na.rm = TRUE)
+average_hour_g <- mean(vem07$H_SAIDA[vem07$N_VIAG == 1], na.rm = TRUE) 
+average_min_g <- mean(vem07$MIN_SAIDA[vem07$N_VIAG == 1], na.rm = TRUE)
+average_duration <- mean(vem17$DURACAO[vem17$N_VIAG == 1], na.rm = TRUE) 
+average_walking <- mean(vem07$ANDA_D[vem07$N_VIAG == 1], na.rm = TRUE) 
 
 table(em07$H_SAIDA[em07$MOTIVO_D%in%4])
 table(sp_2017$H_SAIDA[sp_2017$MOTIVO_D%in%4 & sp_2017$TIPO_ESC%in%1])
@@ -45,3 +48,19 @@ table(em07$PAG_VIAG)
 
 # modal
 table(vem17$MODOPRIN)
+
+
+# Criando o gráfico de densidade
+ggplot(vem17, aes(x = H_SAIDA)) +
+  geom_density(fill = "blue", alpha = 0.4) +
+  scale_x_continuous(
+    breaks = seq(floor(min(vem07$H_SAIDA)), ceiling(max(vem07$H_SAIDA)), by = 1)
+  ) +
+  labs(
+    x = "Hour",
+    y = "Density"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank()  # Remove todas as linhas de grade
+  )

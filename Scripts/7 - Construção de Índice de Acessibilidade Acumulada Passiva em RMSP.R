@@ -12,7 +12,7 @@ library(scales)
 
 #setwd("G:/.shortcut-targets-by-id/13s-t-swy07Av0TJBI4pTBk7Dye0Gk70m/free fare students/")
 
-options(java.parameters = "-Xmx8G")
+options(java.parameters = "-Xmx10G")
 
 # Defining the State for analysis
 estado <- "SP"
@@ -117,27 +117,27 @@ conexao_r5r <- setup_r5(pasta, verbose = FALSE)
 fs::dir_tree(pasta)
 
 # Only execute if necessary: Calculation is very demanding
-# matriz <- travel_time_matrix(
-#   conexao_r5r,
-#   origins = sp,
-#   destinations = sp,
-#   mode = c("WALK", "TRANSIT"),
-#   departure_datetime = as.POSIXct(
-#     "13-05-2014 14:00:00",                 # Pre-Treatment travelling
-#     format = "%d-%m-%Y %H:%M:%S"
-#   ),
-#   max_walk_time = 30,
-#   max_trip_duration = 120,
-#   verbose = FALSE,
-#   progress = TRUE
-# )
+ matriz <- travel_time_matrix(
+   conexao_r5r,
+   origins = sp,
+   destinations = sp,
+   mode = c("WALK", "TRANSIT"),
+   departure_datetime = as.POSIXct(
+     "13-05-2020 06:00:00",                 # Pre-Treatment travelling
+     format = "%d-%m-%Y %H:%M:%S"
+   ),
+   max_walk_time = 30,
+   max_trip_duration = 30,
+   verbose = FALSE,
+   progress = TRUE
+ )
 # head(matriz)
 # 
 # # Exporting Travel Time Matrix calculations
 # write.csv(matriz, "Dados/Dados Tratados/matriz.csv", row.names = FALSE)
 
 # Reading (if already calculated)
-matriz <- read.csv("matriz.csv", header = TRUE, sep = ",")
+#matriz <- read.csv("matriz.csv", header = TRUE, sep = ",")
 
 data.table::setnames(matriz, "travel_time_p50", "travel_time") # If already calculated, not needed
 oportunidades_cumulativas <- cumulative_cutoff(
@@ -145,7 +145,7 @@ oportunidades_cumulativas <- cumulative_cutoff(
   land_use_data = mdf,
   opportunity = "P001",
   travel_cost = "travel_time",
-  cutoff = 120,
+  cutoff = 30, # 30 min maximum travel
   active = FALSE
 )
 head(oportunidades_cumulativas)
@@ -181,10 +181,12 @@ h3_dentro_multipolygon <- h3_dentro_multipolygon %>%
 ggplot() +
   geom_sf(data = h3_dentro_multipolygon, aes(fill = P001), color = NA) +  # Remove as bordas dos hexágonos
   geom_sf(data = rmsp, fill = NA, color = "white") +  # Multipolygon em branco
-  scale_fill_viridis_c(option = "inferno", labels = label_number(scale_cut = cut_si("M"))) +  # Define a escala com unidades
+  scale_fill_viridis_c(
+    option = "inferno", 
+    labels = scales::label_number(scale = 0.001, suffix = " k")  # Converte para milhares e adiciona apenas um "k"
+  ) +
   labs(
-    fill = "Estimativa",
-    title = "Quantas Pessoas Acessam em até 120min este hex?"  # Define o título do gráfico
+    fill = "PCM",
   ) +
   theme_minimal() +
   theme(
@@ -195,7 +197,6 @@ ggplot() +
     axis.ticks = element_blank(),        # Remove as marcações dos eixos
     plot.title = element_text(hjust = 0.5)  # Centraliza o título
   )
-
 # Removing geom column for exporting
 df_sem_geom <- st_drop_geometry(oportunidades_cumulativas)
 df_sem_geom <- df_sem_geom %>%
