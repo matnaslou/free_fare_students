@@ -7,6 +7,8 @@ library(dplyr)
 library(scales)
 library(data.table)
 library(tidyr)
+library(viridis)
+library(gridExtra)
 
 da <- fread("Dados/Dados Tratados/base_final_br.csv")
 dta_sp <- fread("Dados/Dados Tratados/base_final_sp.csv")
@@ -241,3 +243,38 @@ plot_abandono(da_filtrada4)
 # Brasilia 5300108
 # BH 3106200
 # Fortaleza 2304400
+
+plot_media_abandono <- function(dados) {
+  
+  # Calcula a média por ano e grupo de tratamento
+  dados_media <- dados %>%
+    group_by(Ano, treat) %>%
+    summarise(media_abandono = mean(abandono_tot_em, na.rm = TRUE), .groups = "drop")
+  
+  # Cria o gráfico
+  ggplot(dados_media, aes(x = Ano, y = media_abandono, color = factor(treat))) +
+    geom_line(linewidth = 1) +
+    geom_point(size = 3) +
+    scale_x_continuous(breaks = function(x) unique(round(seq(min(x), max(x), length.out = 10)))) +
+    scale_color_viridis_d(
+      option = "D",
+      end = 0.8,
+      labels = c("0" = "Control", "1" = "Treatment"),
+      name = "Grupo"
+    ) +
+    labs(
+         x = "Year",
+         y = "Dropout Rate") +
+    theme_minimal() +
+    theme(panel.grid = element_blank(),
+          axis.line = element_line(color = "black"),
+          legend.position = "bottom",
+  plot.margin = margin(t = 5, r = 5, b = 20, l = 5, unit = "pt"),
+  axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)))
+}
+
+g1 <-plot_media_abandono(da_filtrada4)
+g2 <- plot_media_abandono(da_capitais)
+g1
+# Organizar os gráficos lado a lado
+grid.arrange(g1, g2, ncol = 2)
