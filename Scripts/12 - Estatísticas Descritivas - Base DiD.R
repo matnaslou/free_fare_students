@@ -58,7 +58,7 @@ plot_distribuicao <- function(base_dados, coluna_covariada) {
 }
 
 # Exemplo de uso
-plot_distribuicao(da_capitais, "NU_MEDIA_CH_x")
+plot_distribuicao(da_capitais, "abandono_2009")
 
 # Função para criar o gráfico
 plot_codesc_por_ano <- function(base_dados) {

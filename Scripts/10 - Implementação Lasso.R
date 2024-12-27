@@ -20,21 +20,30 @@ da_cov <- da_cov %>%
 
 # Remover todas as colunas até (e incluindo) 'TP_DEPENDENCIA'
 da_cov <- da_cov %>% 
-  select(-(1:which(names(da_cov) == "TP_DEPENDENCIA")))
+  select(-(1:which(names(da_cov) == "CO_IES_OFERTANTE")))
 
 # Remover colunas com valores missing (NA)
 da_cov <- da_cov %>%
   select(where(~ !any(is.na(.))))
 
+da_cov <- da_cov %>%
+  select(-treat,-did,-time)
+
+da_cov <- da_cov %>%
+  filter(Ano == 2014)
+
 # Independent variables
 X <- makeX(da_cov, na.impute = FALSE)
 
 # Dependent variable
-y <- da_cov_2014 %>% 
+da_capitais_2014 <- da_capitais %>%
+  filter(Ano == 2014)
+
+y <- da_capitais_2014 %>% 
   pull(treat)
 
 # Determine lambda values 
-lambda_seq <- 10^seq(200, 100, length=100)
+lambda_seq <- 10^seq(10, -2, length=100)
 
 # Building the Lasso Regression model
 lasso_model <- glmnet(X, y, alpha=1, lambda=lambda_seq)
@@ -45,7 +54,7 @@ cv_fit <- cv.glmnet(X, y, alpha=1, family = binomial(link = "probit"))
 best_lambda <- cv_fit$lambda.min
 
 # Building final model
-final_model <- glmnet(X_filtered , y, alpha=0.5, lambda=0.9, family = binomial(link = "probit"))
+final_model <- glmnet(X , y, alpha=1, lambda=best_lambda, family = binomial(link = "probit"))
 #final_model <- glmnet(X, y, alpha=1, lambda=best_lambda)
 
 # Getting coefficients 

@@ -140,6 +140,7 @@ da_capitais$cidade6 <- ifelse(da_capitais$cod_mun == 3205309,1,0)
 da_capitais_alta <- da_capitais[is.na(da_capitais$P001) | da_capitais$P001>5457926,]
 da_capitais_baixa <- da_capitais[is.na(da_capitais$P001) | da_capitais$P001<5457926,]
 
+base <- da_capitais
 
 # estimate group-time average treatment effects without covariates
 mw.attgt <- att_gt(yname = "abandono_tot_em",
@@ -147,7 +148,7 @@ mw.attgt <- att_gt(yname = "abandono_tot_em",
                    idname = "CODESC",
                    gname = "first.treat",
                    xformla = ~1,
-                   data = da_capitais,
+                   data = base,
                    base_period = "universal",
                    control_group = "nevertreated",
                    allow_unbalanced_panel = FALSE,
@@ -181,7 +182,7 @@ mw.attgt2 <- att_gt(yname = "abandono_tot_em",
                    idname = "CODESC",
                    gname = "first.treat",
                    xformla = xformla,
-                   data = da_capitais,
+                   data = base,
                    base_period = "universal",
                    control_group = "nevertreated",
                    allow_unbalanced_panel = FALSE,
@@ -201,7 +202,7 @@ mw.attgt3 <- att_gt(yname = "abandono_tot_em",
                     idname = "CODESC",
                     gname = "first.treat",
                     xformla = ~media_abandono,
-                    data = da_capitais,
+                    data = base,
                     base_period = "universal",
                     control_group = "nevertreated",
                     allow_unbalanced_panel = FALSE,
@@ -216,9 +217,39 @@ mw.attgt3 <- att_gt(yname = "abandono_tot_em",
 summary(mw.attgt3)
 
 
+variaveis2 <- c(
+  # School Structure
+  "abandono_2009","abandono_2010","abandono_2011",
+  "abandono_2012","abandono_2013","abandono_2014","sem_enem","NU_MEDIA_MT_x",
+  "NU_MEDIA_CN_x","NU_MEDIA_CH_x"
+)
+# Criar a fórmula dinâmica
+xformla2 <- as.formula(paste("~", paste(variaveis2, collapse = " + ")))
+
+
+# estimate group-time average treatment effects without covariates
+mw.attgt4 <- att_gt(yname = "abandono_tot_em",
+                    tname = "Ano",
+                    idname = "CODESC",
+                    gname = "first.treat",
+                    xformla = xformla2,
+                    data = base,
+                    base_period = "universal",
+                    control_group = "nevertreated",
+                    allow_unbalanced_panel = FALSE,
+                    panel = TRUE,
+                    anticipation = 0,
+                    print_details = TRUE,
+                    weightsname = "QT_MAT_MED", 
+                    est_method = "ipw"
+)
+
+# summarize the results
+summary(mw.attgt4)
+
 # plot the results
 # set ylim so that all plots have the same scale along y-axis
-ggdid(mw.attgt2, ylim = c(-.07, .07))
+ggdid(mw.attgt4, ylim = c(-.07, .07))
 es <- aggte(mw.attgt, type = "simple")
 summary(es)
 ggdid(es)
